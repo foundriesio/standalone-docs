@@ -4,14 +4,15 @@ description: Prepare a Linux host, build Qualcomm Linux with meta-foundries, and
 type: page
 doc-category: instructional
 authors: David Griego, Codex:GPT-6
-last-edited: 2026-10-22
+last-edited: 2026-10-28
 license: MIT
 access: public
 references:
-  - https://github.com/foundriesio/meta-foundries/tree/ff40dc16da368d471e890dd19fe945a220ef3ce2
-  - https://github.com/qualcomm-linux/meta-qcom-arduino/tree/a65e94a51f8233607b683787735225a10d80fe65
-  - https://github.com/qualcomm-linux/meta-qcom-distro/tree/acc7f52e830e4308ea97020184cfb8171b0b1d87
-  - https://github.com/qualcomm-linux/meta-qcom/tree/21c9c0d8138e3472b0ac04e780f18be14aa959ab
+  - https://github.com/foundriesio/meta-foundries/tree/ee25a99b3f2ef66af36a51da583f8223bcaf58d1
+  - https://github.com/qualcomm-linux/meta-qcom-arduino/tree/8457c3dbb5dc650c7b0ac45c99ccb004a05f9d4f
+  - https://github.com/qualcomm-linux/meta-qcom-distro/tree/f0c3c7bd98c36bcb797dc5d8d361dbf90d3cafc0
+  - https://github.com/qualcomm-linux/meta-qcom/tree/b094cfccc192d8e02809bf87c6dd9c76bcf31330
+  - https://github.com/qualcomm-linux/kernel/tree/8d0ad3756ce7d4febc2a5cbdc4d7ab9781d798ca
   - https://github.com/siemens/kas/tree/5.4
 relations:
   prev: README.md
@@ -26,7 +27,8 @@ relations:
 Prepare your computer and build Qualcomm® Linux® (QLI) with meta-foundries for Arduino® UNO Q.
 Save the flash bundle and OS repository for the flashing and update exercises.
 
-> **Validation status:** This configuration built successfully on October 12, 2026.
+> **Validation status:** This configuration built OS version 1 with the M-05 overlay on October 28, 2026.
+> Its image has not yet been flashed by following the guide.
 > See [sources and validation](validation.md) for what has and has not been run on hardware.
 
 - [Prepare the build host](#prepare-the-build-host)
@@ -91,40 +93,55 @@ In a new shell, run `cd "$HOME/unoq-guide"` and set `GUIDE_DIR` again.
 ## Build QLI
 
 Run this section in your **build environment**.
-The configuration selects `qcom-distro-sota` and machine `uno-q`, supplied by `meta-qcom-arduino`.
+The configuration builds meta-foundries' UNO Q configuration on the Yocto Project Wrynose release branches.
+It selects `qcom-distro-sota` and machine `uno-q`, supplied by `meta-qcom-arduino`.
 It builds `core-image-full-cmdline` with the platform updater, Docker application support, networking, and Android Debug Bridge (ADB).
 ADB is enabled in the shared image so either console path works; Bughopper users can complete the guide entirely through serial.
 
+The `uno-q` machine brings the board's stock boot chain: Arduino's boot firmware release 251020,
+the Android bootloader (ABL) partition layout, U-Boot in the boot partition, and systemd-boot.
+After each boot, `qbootctl` marks the boot slot successful; otherwise the firmware would switch to the other slot.
+The kernel is `linux-qcom` 6.18 from `meta-qcom`.
+The flash bundle contains no separate UEFI image and no firmware capsule.
+
 ### What Is Pinned
 
-The [companion configuration](kas/uno-q-wrynose.yml) pins every layer to a commit.
-They are the revisions that the October 8, 2026 hardware validation of meta-foundries `ff40dc1` built and ran on UNO Q.
+The [companion configuration](kas/uno-q-wrynose.yml) includes meta-foundries
+[`ci/uno-q.yml`](https://github.com/foundriesio/meta-foundries/blob/ee25a99b3f2ef66af36a51da583f8223bcaf58d1/ci/uno-q.yml),
+the configuration that meta-foundries' continuous integration builds for the UNO Q.
+That file includes the machine and distro configuration of `meta-qcom-arduino` and `meta-qcom`.
+kas applies the lockfiles beside the included files.
+meta-foundries [`ci/uno-q.lock.yml`](https://github.com/foundriesio/meta-foundries/blob/ee25a99b3f2ef66af36a51da583f8223bcaf58d1/ci/uno-q.lock.yml)
+pins `meta-qcom` at its QLI 2.1.1 tag, `qli-2.1.1`, and pins `meta-qcom-arduino`.
+meta-qcom's [`ci/base.lock.yml`](https://github.com/qualcomm-linux/meta-qcom/blob/b094cfccc192d8e02809bf87c6dd9c76bcf31330/ci/base.lock.yml) pins the remaining layers.
 
-| Layer | Branch | Commit |
-| --- | --- | --- |
-| meta-foundries | `main` | `ff40dc1` |
-| `meta-qcom-arduino`, the UNO Q machine | `main` | `a65e94a` |
-| `meta-qcom-distro`, the QLI distro | `main` | `acc7f52` |
-| `meta-qcom`, the Qualcomm BSP | `master` | `21c9c0d` |
-| OpenEmbedded Core | `master` | `db81c1a`, with three `meta-qcom` patches |
-| BitBake | `master` | `18cca50` |
-| `meta-openembedded` | `master` | `8b1d948` |
-| `meta-selinux` | `master` | `7351443`, with three `meta-qcom` patches |
-| `meta-security` | `master` | `0339b65` |
-| `meta-virtualization` | `master` | `f45cc37` |
-| `meta-updater` | `master` | `3f79539` |
-| `meta-ai` | `main` | `3511d6c` |
-| `meta-audioreach` | `master` | `c25274a` |
+| Layer | Branch | Commit | Pinned by |
+| --- | --- | --- | --- |
+| meta-foundries | `wrynose` | `ee25a99` | Companion configuration |
+| `meta-qcom-arduino`, the UNO Q machine | `wrynose` | `8457c3d` | meta-foundries `ci/uno-q.lock.yml` |
+| `meta-qcom`, the Qualcomm BSP | `wrynose` | `b094cfc`, tag `qli-2.1.1` | meta-foundries `ci/uno-q.lock.yml` |
+| `meta-qcom-distro`, the QLI distro | `wrynose` | `f0c3c7b` | `meta-qcom` `ci/base.lock.yml` |
+| OpenEmbedded Core | `wrynose` | `ef022bf` | `meta-qcom` `ci/base.lock.yml` |
+| BitBake | `2.18` | `0ad6c1c` | `meta-qcom` `ci/base.lock.yml` |
+| `meta-lts-mixins` | `wrynose/linux-firmware` | `71dfb81`, with four `meta-qcom` patches | `meta-qcom` `ci/base.lock.yml` |
+| `meta-openembedded` | `wrynose` | `47d7dbd` | `meta-qcom` `ci/base.lock.yml` |
+| `meta-selinux` | `wrynose` | `1c3a699` | `meta-qcom` `ci/base.lock.yml` |
+| `meta-security` | `wrynose` | `c0d1d62` | `meta-qcom` `ci/base.lock.yml` |
+| `meta-virtualization` | `wrynose` | `70a5d5a` | `meta-qcom` `ci/base.lock.yml` |
+| `meta-updater` | `wrynose` | `92f4788` | `meta-qcom` `ci/base.lock.yml` |
+| `meta-ai` | `main` | `60e38e2` | `meta-qcom` `ci/base.lock.yml` |
+| `meta-audioreach` | `master` | `b578fcb` | `meta-qcom` `ci/base.lock.yml` |
 
-The configuration includes meta-foundries `ci/include/base.yml` at the pinned commit and lists the remaining layers itself.
+Each branch contains its pinned commit, as `kas-container` requires.
+The companion configuration also repeats the `meta-qcom` and `meta-qcom-arduino` commits from the lockfile:
+kas reads the configuration files those two layers include before the lockfile moves their checkouts.
 Use the companion configuration throughout this walkthrough.
 
-> **Why development branches?** The guide's directory, file names, update tag, and build IDs keep the name Wrynose, the release it was first written for.
-> At these revisions, the UNO Q machine needs a boot-firmware recipe that exists only on `meta-qcom` master.
-> meta-foundries also writes license expressions in a syntax that only OpenEmbedded master accepts.
-> A Wrynose build fails on both, so the guide uses the development-branch commits validated on hardware.
+The companion configuration adds the guide's update tag and server addresses, and ADB.
+It also replaces the `meta-qcom` entry that forces Qualcomm RAM-dump mode after a kernel crash;
+the optional overlay `kas/diag-download-mode.yml` restores that setting for diagnosis.
 
-meta-foundries `ff40dc1` selects aktualizr-lite `5d93718`, which includes the OS-name fix.
+meta-foundries `ee25a99` selects aktualizr-lite version 98 at `57e4f7f` and composectl at `fb6b533`.
 The client derives the booted OSTree stateroot, including `nodistro`, when `pacman.os` is unset.
 The guide leaves `pacman.os` unset and requires the OS-update exercise to verify finalization after reboot.
 
@@ -163,7 +180,7 @@ export GUIDE_KAS='kas/uno-q-wrynose.yml'
 ```
 
 **4 GB UNO Q boards** need the temporary M-05 memory reservation.
-Until Qualcomm releases fixed boot firmware, every 4 GB board is affected; 2 GB boards are not.
+Until a boot-firmware release fixes the memory map, every 4 GB board is affected; 2 GB boards are not.
 Record the board's RAM size and, with a Bughopper, its firmware revision in `$GUIDE_DIR/workspace/board-record.txt`.
 Keep this record in the build environment's guide directory, next to the build records.
 The firmware revision comes from the console on the local computer; copy that line into the record:
@@ -184,20 +201,26 @@ The firmware revision comes from the console on the local computer; copy that li
   If `picocom` reports a permission error, see the serial-permission note in [Connect a Bughopper](flash.md#with-a-bughopper).
   Power-cycle the board: unplug the UNO Q's USB-C cable, wait five seconds, and plug it back in.
   Early in the boot output, the boot firmware prints a line beginning `UEFI Ver`; record that line.
-  For example, an affected 4 GB lab board printed `UEFI Ver : 6.0.260722.BOOT.MXF.1.0.c1-00536-KODIAKLA-2`.
+  For example, the boot firmware that this guide's image installs prints `UEFI Ver : 5.0.250619.BOOT.XF.4.1.2-00023-KAMORTALAZ-5`.
   Exit `picocom` with Ctrl+A, then Ctrl+X.
   Without a Bughopper, skip this record; the RAM size decides.
 
 If you cannot determine the RAM size, find it before building.
 
-The [optional layer](workarounds/meta-unoq-m05/conf/layer.conf) reserves
-`0x7b8ff000` through `0x7c9fefff` (17 MiB), with `no-map`, to keep that window out of Linux allocation and the linear map.
-It carries the [lab diagnostic patch](https://github.com/foundriesio/foundries-open-update-tests/blob/10b030947f7fc30d513428129f36aecc4cd957bc/build/recipes/linux-arduino/0001-arm64-dts-qcom-qrb2210-arduino-imola-reserve-m05-boundary.patch).
+On 4 GB boards, the boot firmware lists the 17 MiB window `0x7b8ff000` through `0x7c9fefff` as System RAM.
+With the edk2 UEFI boot chain of earlier guide revisions, pages in that window raised synchronous external aborts during OS updates.
+A hardware test of the stock boot chain on a 4 GB board on October 28, 2026 found the window listed as System RAM too.
+The [optional layer](workarounds/meta-unoq-m05/conf/layer.conf) reserves the window in the device tree, with `no-map`,
+to keep it out of Linux allocation and the linear map.
+Its patch ports the [earlier `linux-arduino` patch](https://github.com/foundriesio/foundries-open-update-tests/blob/10b030947f7fc30d513428129f36aecc4cd957bc/build/recipes/linux-arduino/0001-arm64-dts-qcom-qrb2210-arduino-imola-reserve-m05-boundary.patch)
+to the `linux-qcom` 6.18 kernel.
 This reduces usable RAM and is a temporary firmware workaround.
-The firmware team's test firmware reportedly fixes the issue; a released fix and reservation-free validation remain pending.
-Retain the reservation on affected boards until the released firmware passes validation without it.
+A fixed memory map is expected from a future boot-firmware release.
+Retain the reservation on affected boards until a released firmware passes validation without it.
 
-For a 4 GB board, copy the supplied layer into the kas work directory and select its overlay:
+For a 4 GB board, copy the supplied layer into the kas work directory and select its overlay.
+If `$KAS_WORK_DIR/meta-unoq-m05` exists from an earlier revision of this guide, move it aside first:
+its append targets the `linux-arduino` kernel, which this configuration does not build.
 
 ```bash
 mkdir -p "$KAS_WORK_DIR/meta-unoq-m05"
@@ -206,14 +229,15 @@ export GUIDE_KAS="$GUIDE_KAS:kas/m05-4gb.yml"
 ```
 
 The overlay's relative repository path resolves under `KAS_WORK_DIR`, including inside kas-container.
-It targets `linux-arduino_7.0` on `uno-q` and intentionally fails if that recipe is absent.
-The patch applies to the kernel that the pinned Arduino layer selects.
+It targets `linux-qcom_6.18` on `uno-q` and intentionally fails if that recipe is absent.
+The patch applies to the kernel that the pinned `meta-qcom` selects.
 Do not suppress a dangling-append error or generalize the patch to another kernel or board without reviewing it.
 Use the same selection and layer contents for both OS builds; test firmware changes separately.
 
 ### Check the Sources and Build
 
-The configuration pins every repository, so the build needs no kas lockfile.
+The configuration and the lockfiles it includes pin every repository, so the guide needs no lockfile of its own:
+`kas-container lock kas/uno-q-wrynose.yml` reports `No floating repos found. Nothing to lock.`
 If `kas/uno-q-wrynose.lock.yml` exists from an earlier revision of this guide, move it out of `kas/` first.
 kas applies a lockfile next to a configuration automatically, and an old one would replace these pins.
 
@@ -228,14 +252,15 @@ awk '/^repos:/{r=1; next} /^[^ ]/{r=0} r && /^  [a-z]/{name=$1} r && /commit:/{p
   "$GUIDE_DIR/workspace/os-v1-resolved.yml"
 ```
 
-Check that each commit begins with the commit in the [table above](#what-is-pinned). Then build:
+Check that the command lists 14 repositories and that each commit begins with the commit in the [table above](#what-is-pinned). Then build:
 
 ```bash
 kas-container build "$GUIDE_KAS:kas/os-v1.yml"
 ```
 
-The first build runs about 6,900 BitBake tasks.
-On a 16-core host with 32 GB RAM and the sources already downloaded, it took about 35 minutes.
+The first build runs about 7,000 BitBake tasks.
+On a 16-core host, with the sources downloaded and most shared state already cached, it took about 16 minutes;
+a build without shared-state caches takes considerably longer.
 Allow two hours or more on a smaller host, or when the sources still need downloading.
 If the build stops with an error, see [troubleshooting](troubleshooting.md#troubleshoot-a-failed-checkpoint).
 Keep the pinned revisions; changing one to work around an error produces an untested combination.

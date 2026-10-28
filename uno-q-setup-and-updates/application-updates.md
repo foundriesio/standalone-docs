@@ -4,15 +4,15 @@ description: Deploy shellhttpd, update the OS and app, add a second app, and upd
 type: page
 doc-category: instructional
 authors: David Griego, Codex:GPT-6
-last-edited: 2026-10-13
+last-edited: 2026-10-28
 license: MIT
 access: public
 references:
-  - https://github.com/foundriesio/update-server/blob/e30762e42e3cd45f730be51d2f0e5aaca2b02363/docs/build-an-update.md
-  - https://github.com/foundriesio/update-server/blob/e30762e42e3cd45f730be51d2f0e5aaca2b02363/docs/updates.md
+  - https://github.com/foundriesio/update-server/blob/e307a38b702da479b971b8286d534f0545956dec/docs/build-an-update.md
+  - https://github.com/foundriesio/update-server/blob/e307a38b702da479b971b8286d534f0545956dec/docs/updates.md
   - https://github.com/foundriesio/composeapp/tree/07a5b14b2e55f6882f7323ad6a32e62438aa5098
   - https://github.com/foundriesio/containers/tree/5be067eb56d1cb59dcbf82568f36986705af9a8a/shellhttpd
-  - https://github.com/foundriesio/aktualizr-lite/tree/5d9371869bb83dff10f951d26247cdd4a531bbb7
+  - https://github.com/foundriesio/aktualizr-lite/tree/57e4f7f1959a5050fbd35c7a759f94e861c651a5
 relations:
   prev: server-registration.md
   parent: README.md
@@ -32,9 +32,9 @@ and run `export PATH="$GUIDE_DIR/workspace/bin:$PATH"`.
 Keep the [Linux® build environment](build.md#install-kas-container-and-build-os-version-1), cache paths, and build records for the OS version 2 build.
 The board's image has no `curl`, so this page checks the applications' HTTP responses from the computer.
 
-> **Validation status:** All four exercises completed on an UNO Q on October 13, 2026, with update-server release v1.0-rc1.
-> That walkthrough used the previous revision of this page and needed the publish-directory and registry notes added here.
-> This revision's update-server build has not been run on hardware yet.
+> **Validation status:** All four exercises completed on an UNO Q on October 13, 2026, with update-server release v1.0-rc1, and again in that day's run 3 with a source build of `e30762e`.
+> Both runs used the earlier boot chain and kernel; the commands on this page are unchanged since run 3.
+> This revision's image and update-server v1.0-rc3 binaries have not been run through these exercises on hardware yet.
 > See [sources and validation](validation.md).
 
 - [Package and deliver shellhttpd version 1](#package-and-deliver-shellhttpd-version-1)
@@ -59,8 +59,8 @@ Changing a registry tag such as `latest` alone does not change the digest pinned
 
 The later `--ostree-hash` step supplies the retained OS identity when creating an app-only target on this server.
 aktualizr-lite already supports application-only updates; that flag belongs to the server-side upload command.
-See the client's [app comparison](https://github.com/foundriesio/aktualizr-lite/blob/5d9371869bb83dff10f951d26247cdd4a531bbb7/src/composeappmanager.cc#L221)
-and [unchanged OS handling](https://github.com/foundriesio/aktualizr-lite/blob/5d9371869bb83dff10f951d26247cdd4a531bbb7/src/rootfstreemanager.cc#L175).
+See the client's [app comparison](https://github.com/foundriesio/aktualizr-lite/blob/57e4f7f1959a5050fbd35c7a759f94e861c651a5/src/composeappmanager.cc#L299)
+and [unchanged OS handling](https://github.com/foundriesio/aktualizr-lite/blob/57e4f7f1959a5050fbd35c7a759f94e861c651a5/src/rootfstreemanager.cc#L193).
 
 ### Install the Packaging Tool
 
@@ -80,8 +80,8 @@ Run packaging commands as the same host account used for Docker registry login.
 
 ### Prepare the Application Registry
 
-This section follows the upstream [Build Apps](https://github.com/foundriesio/update-server/blob/e30762e42e3cd45f730be51d2f0e5aaca2b02363/docs/build-an-update.md#build-apps)
-and [update upload](https://github.com/foundriesio/update-server/blob/e30762e42e3cd45f730be51d2f0e5aaca2b02363/docs/updates.md) workflow.
+This section follows the upstream [Build Apps](https://github.com/foundriesio/update-server/blob/e307a38b702da479b971b8286d534f0545956dec/docs/build-an-update.md#build-apps)
+and [update upload](https://github.com/foundriesio/update-server/blob/e307a38b702da479b971b8286d534f0545956dec/docs/updates.md) workflow.
 It includes both the OSTree repository and the downloaded app/image blobs in the upload.
 
 Use a registry account that can publish a container image and a Compose app.
@@ -326,7 +326,6 @@ For a minute or two after the reboot, `docker ps` can be slow while Docker start
 Log lines from before Wi-Fi and the clock come up, such as `curl error 28` or `docker: unknown command: docker compose`, are expected.
 
 The board's Wi-Fi address can change across the reboot.
-This image's Wi-Fi interface takes a new random hardware address at each boot.
 Read the Wi-Fi interface's address from `ip -4 address`. On the **computer**, update `UNOQ_DEVICE_IP` if it changed, then request the page:
 
 ```bash

@@ -4,14 +4,15 @@ description: Run the local update server, register the device, and select its ap
 type: page
 doc-category: instructional
 authors: David Griego, Codex:GPT-6
-last-edited: 2026-10-13
+last-edited: 2026-10-28
 license: MIT
 access: public
 references:
-  - https://github.com/foundriesio/update-server/blob/e30762e42e3cd45f730be51d2f0e5aaca2b02363/docs/quick-start.md
-  - https://github.com/foundriesio/update-server/blob/e30762e42e3cd45f730be51d2f0e5aaca2b02363/cmd/server/dev_server.go
-  - https://github.com/foundriesio/update-server/blob/e30762e42e3cd45f730be51d2f0e5aaca2b02363/docs/fiocli.md
-  - https://github.com/foundriesio/meta-foundries/blob/ff40dc16da368d471e890dd19fe945a220ef3ce2/recipes-sota/fio-device-register/fio-device-register_97.bb
+  - https://github.com/foundriesio/update-server/releases/tag/v1.0-rc3
+  - https://github.com/foundriesio/update-server/blob/e307a38b702da479b971b8286d534f0545956dec/docs/quick-start.md
+  - https://github.com/foundriesio/update-server/blob/e307a38b702da479b971b8286d534f0545956dec/cmd/server/dev_server.go
+  - https://github.com/foundriesio/update-server/blob/e307a38b702da479b971b8286d534f0545956dec/docs/fiocli.md
+  - https://github.com/foundriesio/meta-foundries/blob/ee25a99b3f2ef66af36a51da583f8223bcaf58d1/recipes-sota/fio-device-register/fio-device-register_97.bb
   - https://github.com/foundriesio/lmp-device-register/tree/d8f39a6d95e20f5b64881ae014381682aa1c7aad
 relations:
   prev: flash.md
@@ -29,9 +30,9 @@ The board must be running OS version 1, connected to your local area network (LA
 Use your local Linux® computer, with the complete guide directory and `GUIDE_DIR` set to its absolute path.
 Keep this host Bash session open for the application exercises so `GUIDE_DIR` and `UNOQ_UUID` remain available.
 
-> **Validation status:** These steps completed on an UNO Q on October 11 and 13, 2026, with update-server release v1.0-rc1.
-> On October 13, back-to-back CLI commands hit that release's request-rate limit (HTTP 429), which the source build here raises.
-> This revision's update-server build has not been run on hardware yet.
+> **Validation status:** These steps completed on an UNO Q on October 11 and 13, 2026, with update-server release v1.0-rc1 and then a source build of `e30762e`.
+> On October 13, back-to-back CLI commands hit v1.0-rc1's request-rate limit (HTTP 429); `e30762e` raised that limit, and release v1.0-rc3 includes the change.
+> This revision's v1.0-rc3 binaries have not been run through the guide on hardware yet.
 > See [sources and validation](validation.md).
 
 - [Start the update server on your computer](#start-the-update-server-on-your-computer)
@@ -42,7 +43,7 @@ Keep this host Bash session open for the application exercises so `GUIDE_DIR` an
 ## Start the Update Server on Your Computer
 
 Run this section in a Bash shell on your **local Linux host** using your regular account.
-It follows the upstream [development-server bootstrap](https://github.com/foundriesio/update-server/blob/e30762e42e3cd45f730be51d2f0e5aaca2b02363/docs/quick-start.md).
+It follows the upstream [development-server bootstrap](https://github.com/foundriesio/update-server/blob/e307a38b702da479b971b8286d534f0545956dec/docs/quick-start.md).
 
 This is a local development server.
 Its enrollment UI uses HTTP, and the UNO Q image enables development console access.
@@ -103,41 +104,43 @@ If `firewalld` reports `running`, run `sudo firewall-cmd --add-port=8080/tcp --a
 If neither tool is installed or active, the computer has no firewall from either tool to change.
 If your organization manages the computer's firewall, ask its administrator to open the two ports.
 
-### Build and Initialize the Server
+### Download and Initialize the Server
 
-This walkthrough uses the server and CLI from update-server `main` at commit
-[`e30762e`](https://github.com/foundriesio/update-server/tree/e30762e42e3cd45f730be51d2f0e5aaca2b02363).
-It raises the server's request-rate limit, which release v1.0-rc1 sets low enough to reject the CLI commands below.
-No release includes that change yet, so build both tools from source on the **local computer**.
+This walkthrough uses the server and CLI of update-server release
+[v1.0-rc3](https://github.com/foundriesio/update-server/releases/tag/v1.0-rc3), built from commit
+[`e307a38`](https://github.com/foundriesio/update-server/tree/e307a38b702da479b971b8286d534f0545956dec).
+It includes the higher request-rate limit that the CLI commands below need; release v1.0-rc1 rejects some of them with HTTP 429.
+The release publishes no checksum file, so the commands check each download against the SHA-256 checksum recorded for this guide.
 
-The server's web UI files use Git Large File Storage (LFS). Install it first:
+Download both tools on the **local computer**:
 
 ```bash
-sudo apt install git-lfs
+mkdir -p "$GUIDE_DIR/workspace/bin"
+cd "$GUIDE_DIR/workspace/bin"
+curl -fLO https://github.com/foundriesio/update-server/releases/download/v1.0-rc3/fioserver-linux-amd64
+curl -fLO https://github.com/foundriesio/update-server/releases/download/v1.0-rc3/fiocli-linux-amd64
+sha256sum -c <<'EOF'
+5dac161d79f679c15dcfe1ba0aff275e979893fb683a30f4777acf664439aa27  fioserver-linux-amd64
+3e87a42d862433d7d12258c2c3b9d16ad9f55ea7368421b476a485c2f78dca62  fiocli-linux-amd64
+EOF
 ```
 
-The build runs in a Go container, so the computer needs no Go toolchain:
+`sha256sum` must print `fioserver-linux-amd64: OK` and `fiocli-linux-amd64: OK`.
+If either line reports `FAILED`, delete that file and download it again; do not run a file that fails the check.
+Then install the tools under the names the guide uses:
 
 ```bash
-git clone https://github.com/foundriesio/update-server.git "$GUIDE_DIR/workspace/update-server"
-cd "$GUIDE_DIR/workspace/update-server"
-git checkout e30762e42e3cd45f730be51d2f0e5aaca2b02363
-git lfs pull
-docker run --rm -u "$(id -u):$(id -g)" -e HOME=/tmp -e GOPATH=/tmp/go \
-  -v "$PWD":/src -w /src golang:1.25-bookworm \
-  make COMMIT="$(git describe --tags HEAD)" fioserver fiocli-linux-amd64
-mkdir -p "$GUIDE_DIR/workspace/bin"
-cp bin/fioserver "$GUIDE_DIR/workspace/bin/fioserver"
-cp bin/fiocli-linux-amd64 "$GUIDE_DIR/workspace/bin/fiocli"
+mv fioserver-linux-amd64 fioserver
+mv fiocli-linux-amd64 fiocli
+chmod +x fioserver fiocli
 export PATH="$GUIDE_DIR/workspace/bin:$PATH"
 fioserver --version
 fiocli version
 ```
 
-Both version commands must print `v1.0-rc1-12-ge30762e`.
-The container's C library is older than Ubuntu 22.04's and 24.04's, so the server built there runs on either.
-Keep both tools at this commit for the walkthrough.
-Once a release includes the rate-limit change, a later revision of this guide downloads that release instead.
+Both version commands must print `v1.0-rc3`.
+The server needs GNU C Library 2.34 or newer, which Ubuntu 22.04 and 24.04 provide.
+Keep both tools at this release for the walkthrough.
 
 Initialize the server's data directory:
 

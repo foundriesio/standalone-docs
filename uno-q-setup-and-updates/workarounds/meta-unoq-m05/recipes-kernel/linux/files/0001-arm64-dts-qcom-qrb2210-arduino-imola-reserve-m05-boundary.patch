@@ -1,29 +1,35 @@
-From: David Griego <dgriego@quicinc.com>
+From: David Griego <david.griego@foundries.io>
 Subject: [PATCH] arm64: dts: qcom: qrb2210-arduino-imola: reserve M-05 boundary window
 
-Lab diagnostic only. UEFI advertises 0x7b8ff000-0x7c9fefff as conventional
-memory while the bootloader memory fixup ends the bank at 0x7b8fefff. Pages
-in this window raised synchronous external aborts during OSTree deployment
-(UNO Q M-05). Keep the window out of the linear map and the allocator.
+Workaround for 4 GB UNO Q boards (UNO Q M-05). The boot firmware lists
+0x7b8ff000-0x7c9fefff (17 MiB) as System RAM. With the edk2 UEFI boot
+chain, pages in this window raised synchronous external aborts during
+OSTree deployment. Arduino's stock boot chain (the 251020 boot firmware
+with U-Boot) still lists the window as System RAM. Reserve it with
+no-map, keeping it out of the linear map and the page allocator, until
+boot firmware with a fixed memory map is released.
 
-Upstream-Status: Inappropriate [lab diagnostic; not for upstream]
+Ported from the linux-arduino 7.0 version of this patch to linux-qcom
+6.18, whose board device tree is qrb2210-arduino-imola.dts.
+
+Upstream-Status: Inappropriate [board firmware workaround; not for upstream]
 ---
- arch/arm64/boot/dts/qcom/qrb2210-arduino-imola-base.dts | 13 +++++++++++++
+ arch/arm64/boot/dts/qcom/qrb2210-arduino-imola.dts | 13 +++++++++++++
  1 file changed, 13 insertions(+)
 
---- a/arch/arm64/boot/dts/qcom/qrb2210-arduino-imola-base.dts
-+++ b/arch/arm64/boot/dts/qcom/qrb2210-arduino-imola-base.dts
-@@ -689,3 +689,16 @@
+--- a/arch/arm64/boot/dts/qcom/qrb2210-arduino-imola.dts
++++ b/arch/arm64/boot/dts/qcom/qrb2210-arduino-imola.dts
+@@ -563,3 +563,16 @@
  &xo_board {
  	clock-frequency = <38400000>;
  };
 +
 +&reserved_memory {
 +	/*
-+	 * UNO Q M-05 lab diagnostic: UEFI advertises 0x7b8ff000-0x7c9fefff as
-+	 * conventional RAM while the bootloader memory fixup ends the bank at
-+	 * 0x7b8fefff. Pages here raised synchronous external aborts during
-+	 * OSTree deployment. Keep the window out of the linear map/allocator.
++	 * UNO Q M-05 workaround for 4 GB boards: the boot firmware lists
++	 * 0x7b8ff000-0x7c9fefff as System RAM. With the edk2 UEFI, pages in
++	 * this window raised synchronous external aborts during OSTree
++	 * deployment. Keep the window out of the linear map and the allocator.
 +	 */
 +	m05_boundary_guard: m05-boundary-guard@7b8ff000 {
 +		reg = <0x0 0x7b8ff000 0x0 0x1100000>;

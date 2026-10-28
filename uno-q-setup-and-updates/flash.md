@@ -4,13 +4,14 @@ description: Flash the Qualcomm Linux image, access UNO Q with or without a Bugh
 type: page
 doc-category: instructional
 authors: David Griego, Caio Pereira, Codex:GPT-6
-last-edited: 2026-10-13
+last-edited: 2026-10-28
 license: MIT
 access: public
 references:
   - https://github.com/arduino/docs-content/tree/dab66ecbd6ad52cd742da6c19c5b6330a7f2caae
   - https://github.com/qualcomm/pytactl/tree/6ee43578f983487821ade4feebebad94198da622
   - https://github.com/foundriesio/meta-foundries/commit/3ed349554814f5596891ac155d58a55f9a636df7
+  - https://github.com/qualcomm-linux/meta-qcom-arduino/blob/8457c3dbb5dc650c7b0ac45c99ccb004a05f9d4f/conf/machine/uno-q.conf
   - https://github.com/linux-msm/qdl/tree/v2.8
 relations:
   prev: build.md
@@ -29,8 +30,9 @@ Confirm that `workspace/unoq-os1-flash.tar.gz` and `workspace/releases/1/ostree_
 Choose Bughopper serial access or Android Debug Bridge (ADB), then connect Arduino® UNO Q to your network.
 The board will run Qualcomm® Linux® (QLI) after flashing.
 
-> **Validation status:** The Bughopper flashing and serial-console steps completed on an UNO Q on October 11 and 13, 2026.
-> This configuration's image was flashed and booted on October 13, and ADB listed the board and opened a root shell.
+> **Validation status:** The Bughopper flashing and serial-console steps completed on an UNO Q on October 11 and 13, 2026, with the previous revision's edk2 UEFI boot chain.
+> That image was flashed and booted on October 13, and ADB listed the board and opened a root shell.
+> This revision's image, with the stock U-Boot boot chain, has not yet been flashed by following the guide.
 > The jumper path has not been run.
 > See [sources and validation](validation.md).
 

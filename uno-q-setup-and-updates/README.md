@@ -4,14 +4,16 @@ description: Build, flash, register, select applications, and deliver OS and app
 type: page
 doc-category: informational
 authors: David Griego, Codex:GPT-6
-last-edited: 2026-10-22
+last-edited: 2026-10-28
 license: MIT
 access: public
 references:
-  - https://github.com/foundriesio/meta-foundries/tree/ff40dc16da368d471e890dd19fe945a220ef3ce2
-  - https://github.com/qualcomm-linux/meta-qcom-distro/tree/acc7f52e830e4308ea97020184cfb8171b0b1d87
-  - https://github.com/foundriesio/update-server/blob/e30762e42e3cd45f730be51d2f0e5aaca2b02363/docs/quick-start.md
-  - https://github.com/foundriesio/update-server/blob/e30762e42e3cd45f730be51d2f0e5aaca2b02363/docs/updates.md
+  - https://github.com/foundriesio/meta-foundries/tree/ee25a99b3f2ef66af36a51da583f8223bcaf58d1
+  - https://github.com/qualcomm-linux/meta-qcom-arduino/tree/8457c3dbb5dc650c7b0ac45c99ccb004a05f9d4f
+  - https://github.com/qualcomm-linux/meta-qcom-distro/tree/f0c3c7bd98c36bcb797dc5d8d361dbf90d3cafc0
+  - https://github.com/foundriesio/update-server/releases/tag/v1.0-rc3
+  - https://github.com/foundriesio/update-server/blob/e307a38b702da479b971b8286d534f0545956dec/docs/quick-start.md
+  - https://github.com/foundriesio/update-server/blob/e307a38b702da479b971b8286d534f0545956dec/docs/updates.md
   - https://github.com/arduino/docs-content/tree/dab66ecbd6ad52cd742da6c19c5b6330a7f2caae
 relations:
   next: build.md
@@ -43,12 +45,12 @@ The walkthrough includes these checkpoints:
 9. [Update an existing application without updating the OS](application-updates.md#update-an-existing-application-without-updating-the-os).
 
 > **Validation status:** On 2026-10-13, a hardware walkthrough of guide revision `c71f6af` passed all nine checkpoints on a 4 GB UNO Q with Bughopper and the temporary M-05 workaround.
-> It used update server and fiocli built from `e30762e` (`v1.0-rc1-12-ge30762e`).
-> The combined OS and application update rebooted and finalized successfully; both application-only changes preserved the OS checksum and boot ID.
-> See [the run 3 record](validation.md#run-3-hardware-walkthrough-on-2026-10-13) for the baseline, results, and coverage limits.
+> That revision built development-branch layers with the `linux-arduino` 7.0 kernel and an edk2 UEFI boot chain, and used update server and fiocli built from `e30762e` (`v1.0-rc1-12-ge30762e`).
+> This revision builds the Wrynose release branches with the UNO Q's stock U-Boot boot chain and the `linux-qcom` 6.18 kernel, and downloads update-server release v1.0-rc3.
+> Its OS version 1 image built on 2026-10-28; a hardware walkthrough of this revision is pending.
+> See [the run 3 record](validation.md#run-3-hardware-walkthrough-on-2026-10-13) and [the October 28 change](validation.md#october-28-move-to-wrynose-and-the-stock-boot-chain).
 
-The configuration file names, update tag, and build IDs say Wrynose, the release the guide first targeted.
-This revision builds from development-branch commits instead; [the build page](build.md#what-is-pinned) explains why.
+The guide builds the Yocto Project Wrynose release branches, as meta-foundries' `wrynose` branch does; [the build page](build.md#what-is-pinned) lists the pinned revisions.
 
 Before building for a 4 GB board, select the [temporary M-05 memory workaround](build.md#select-the-boards-memory-configuration).
 Its use and eventual removal require recording the board and firmware revision.
@@ -80,11 +82,11 @@ The example also uses `8080`, on the **board's IP address**.
 
 ## References
 
-- [Foundries Update Server quick-start](https://github.com/foundriesio/update-server/blob/e30762e42e3cd45f730be51d2f0e5aaca2b02363/docs/quick-start.md)
-- [Building updates and Compose apps](https://github.com/foundriesio/update-server/blob/e30762e42e3cd45f730be51d2f0e5aaca2b02363/docs/build-an-update.md)
-- [Uploading updates and creating rollouts](https://github.com/foundriesio/update-server/blob/e30762e42e3cd45f730be51d2f0e5aaca2b02363/docs/updates.md)
-- [QLI distro configuration](https://github.com/qualcomm-linux/meta-qcom-distro/tree/acc7f52e830e4308ea97020184cfb8171b0b1d87)
-- [meta-foundries integration configuration](https://github.com/foundriesio/meta-foundries/blob/ff40dc16da368d471e890dd19fe945a220ef3ce2/ci/include/base.yml)
+- [Foundries Update Server quick-start](https://github.com/foundriesio/update-server/blob/e307a38b702da479b971b8286d534f0545956dec/docs/quick-start.md)
+- [Building updates and Compose apps](https://github.com/foundriesio/update-server/blob/e307a38b702da479b971b8286d534f0545956dec/docs/build-an-update.md)
+- [Uploading updates and creating rollouts](https://github.com/foundriesio/update-server/blob/e307a38b702da479b971b8286d534f0545956dec/docs/updates.md)
+- [QLI distro configuration](https://github.com/qualcomm-linux/meta-qcom-distro/tree/f0c3c7bd98c36bcb797dc5d8d361dbf90d3cafc0)
+- [meta-foundries UNO Q configuration](https://github.com/foundriesio/meta-foundries/blob/ee25a99b3f2ef66af36a51da583f8223bcaf58d1/ci/uno-q.yml)
 - [Foundries shellhttpd example](https://github.com/foundriesio/containers/tree/5be067eb56d1cb59dcbf82568f36986705af9a8a/shellhttpd)
 - [Arduino UNO Q manual](https://docs.arduino.cc/tutorials/uno-q/user-manual/)
 - [Arduino Bughopper manual](https://docs.arduino.cc/tutorials/bughopper/user-manual/)
