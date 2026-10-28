@@ -24,3 +24,7 @@ The linter action for this repo will only enforce rules that will apply to all d
 To add a document, fork, work on a branch, and then open a PR against `main`.
 
 Please add the required frontmatter meta-data to all files.
+
+## Guides
+
+- [Set Up UNO Q with Qualcomm Linux and a Local Update Server](uno-q-setup-and-updates/README.md): build, flash, register, and update an Arduino UNO Q.

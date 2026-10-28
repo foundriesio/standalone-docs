@@ -1,0 +1,7 @@
+header:
+  version: 14
+local_conf_header:
+  guide-os-version: |
+    H_BUILD = "1"
+    # meta-qcom's CI configuration already adds BUILD_ID to os-release.
+    BUILD_ID = "unoq-wrynose-os-1"

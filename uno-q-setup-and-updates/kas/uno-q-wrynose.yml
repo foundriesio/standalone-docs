@@ -1,0 +1,47 @@
+header:
+  version: 14
+  includes:
+    # meta-foundries' UNO Q CI configuration: the uno-q machine from
+    # meta-qcom-arduino, the qcom-distro layers and base settings from
+    # meta-qcom, and meta-foundries' own base. kas also applies the lockfiles
+    # beside the included files: meta-foundries' ci/uno-q.lock.yml and
+    # meta-qcom's ci/base.lock.yml, which pin the remaining layers.
+    - repo: meta-foundries
+      file: ci/uno-q.yml
+
+machine: uno-q
+distro: qcom-distro-sota
+target: core-image-full-cmdline
+
+repos:
+  meta-foundries:
+    url: https://github.com/foundriesio/meta-foundries.git
+    branch: wrynose
+    commit: ee25a99b3f2ef66af36a51da583f8223bcaf58d1
+  # The commits of meta-foundries' ci/uno-q.lock.yml, repeated here: kas reads
+  # the files these repositories include before that lockfile moves their
+  # checkouts, so they must start at the locked commits.
+  meta-qcom:
+    url: https://github.com/qualcomm-linux/meta-qcom
+    branch: wrynose
+    commit: b094cfccc192d8e02809bf87c6dd9c76bcf31330
+  meta-qcom-arduino:
+    url: https://github.com/qualcomm-linux/meta-qcom-arduino
+    branch: wrynose
+    commit: 8457c3dbb5dc650c7b0ac45c99ccb004a05f9d4f
+
+local_conf_header:
+  guide-identity: |
+    LMP_FACTORY_TAG = "wrynose"
+    FIO_DEVICE_API = "http://unoq-update.test:8080/v1/devices"
+    FIO_OAUTH_API = "http://unoq-update.test:8080/oauth2"
+  guide-adb: |
+    IMAGE_CLASSES += "image-adbd"
+    EXTRA_IMAGE_FEATURES += "enable-adbd"
+    # The UNO Q machine installs a short module list; the ADB USB gadget needs these.
+    IMAGE_INSTALL:append = " kernel-module-libcomposite kernel-module-usb-f-fs"
+  # Replaces meta-qcom ci/base.yml's entry, which forces Qualcomm RAM-dump
+  # mode on a kernel crash. The optional overlay kas/diag-download-mode.yml
+  # selects it.
+  cmdline: |
+    # qcom_scm.download_mode=1: see kas/diag-download-mode.yml.
