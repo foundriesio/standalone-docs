@@ -47,8 +47,8 @@ The walkthrough includes these checkpoints:
 > **Validation status:** On 2026-10-13, a hardware walkthrough of guide revision `c71f6af` passed all nine checkpoints on a 4 GB UNO Q with Bughopper and the temporary M-05 workaround.
 > That revision built development-branch layers with the `linux-arduino` 7.0 kernel and an edk2 UEFI boot chain, and used update server and fiocli built from `e30762e` (`v1.0-rc1-12-ge30762e`).
 > This revision builds the Wrynose release branches with the UNO Q's stock U-Boot boot chain and the `linux-qcom` 6.18 kernel, and downloads update-server release v1.0-rc3.
-> Its OS version 1 image built on 2026-10-28; a hardware walkthrough of this revision is pending.
-> See [the run 3 record](validation.md#run-3-hardware-walkthrough-on-2026-10-13) and [the October 28 change](validation.md#october-28-move-to-wrynose-and-the-stock-boot-chain).
+> On 2026-10-28, a hardware walkthrough of revision `72f7f01`, whose commands this revision keeps, passed all nine checkpoints on a 4 GB UNO Q with Bughopper and the M-05 overlay.
+> See [the run 4 record](validation.md#run-4-hardware-walkthrough-on-2026-10-28) and [the October 28 change](validation.md#october-28-move-to-wrynose-and-the-stock-boot-chain).
 
 The guide builds the Yocto Project Wrynose release branches, as meta-foundries' `wrynose` branch does; [the build page](build.md#what-is-pinned) lists the pinned revisions.
 

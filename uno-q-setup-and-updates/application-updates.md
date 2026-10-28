@@ -34,7 +34,7 @@ The board's image has no `curl`, so this page checks the applications' HTTP resp
 
 > **Validation status:** All four exercises completed on an UNO Q on October 13, 2026, with update-server release v1.0-rc1, and again in that day's run 3 with a source build of `e30762e`.
 > Both runs used the earlier boot chain and kernel; the commands on this page are unchanged since run 3.
-> This revision's image and update-server v1.0-rc3 binaries have not been run through these exercises on hardware yet.
+> All four exercises completed again on October 28 with this revision's image, the stock U-Boot boot chain, and the v1.0-rc3 binaries.
 > See [sources and validation](validation.md).
 
 - [Package and deliver shellhttpd version 1](#package-and-deliver-shellhttpd-version-1)

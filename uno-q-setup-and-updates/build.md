@@ -27,8 +27,7 @@ relations:
 Prepare your computer and build Qualcomm® Linux® (QLI) with meta-foundries for Arduino® UNO Q.
 Save the flash bundle and OS repository for the flashing and update exercises.
 
-> **Validation status:** This configuration built OS version 1 with the M-05 overlay on October 28, 2026.
-> Its image has not yet been flashed by following the guide.
+> **Validation status:** On October 28, 2026, a hardware walkthrough followed this page to build OS versions 1 and 2 with the M-05 overlay.
 > See [sources and validation](validation.md) for what has and has not been run on hardware.
 
 - [Prepare the build host](#prepare-the-build-host)

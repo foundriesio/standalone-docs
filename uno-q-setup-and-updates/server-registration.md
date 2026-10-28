@@ -32,7 +32,7 @@ Keep this host Bash session open for the application exercises so `GUIDE_DIR` an
 
 > **Validation status:** These steps completed on an UNO Q on October 11 and 13, 2026, with update-server release v1.0-rc1 and then a source build of `e30762e`.
 > On October 13, back-to-back CLI commands hit v1.0-rc1's request-rate limit (HTTP 429); `e30762e` raised that limit, and release v1.0-rc3 includes the change.
-> This revision's v1.0-rc3 binaries have not been run through the guide on hardware yet.
+> On October 28, these steps completed on hardware with this revision's image and the v1.0-rc3 binaries, with no HTTP 429.
 > See [sources and validation](validation.md).
 
 - [Start the update server on your computer](#start-the-update-server-on-your-computer)

@@ -32,8 +32,8 @@ The board will run Qualcomm® Linux® (QLI) after flashing.
 
 > **Validation status:** The Bughopper flashing and serial-console steps completed on an UNO Q on October 11 and 13, 2026, with the previous revision's edk2 UEFI boot chain.
 > That image was flashed and booted on October 13, and ADB listed the board and opened a root shell.
-> This revision's image, with the stock U-Boot boot chain, has not yet been flashed by following the guide.
-> The jumper path has not been run.
+> On October 28, this revision's image, with the stock U-Boot boot chain, was flashed and booted through the Bughopper path, and the M-05 check passed.
+> ADB has not been run with this revision's kernel, and the jumper path has not been run.
 > See [sources and validation](validation.md).
 
 - [Prepare the equipment and flashing tools](#prepare-the-equipment-and-flashing-tools)

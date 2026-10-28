@@ -63,7 +63,7 @@ A walkthrough of revision `f97458c` completed every exercise on hardware on Octo
 The update server then moved from release v1.0-rc1 to a source build of `main`.
 Run 3 verified that source build at `e30762e` with guide revision `c71f6af` on 2026-10-13; its record was added on 2026-10-19.
 On October 28, 2026, the guide moved to meta-foundries' `wrynose` branch, the UNO Q's stock U-Boot boot chain, the `linux-qcom` 6.18 kernel, and the update-server v1.0-rc3 release binaries.
-[That change](#october-28-move-to-wrynose-and-the-stock-boot-chain) has been built but not yet walked through on hardware.
+[That change](#october-28-move-to-wrynose-and-the-stock-boot-chain) was built, and run 4 walked revision `72f7f01` through every checkpoint on hardware the same day.
 This record describes the guide's evidence and outstanding execution checks.
 
 ## Source Baseline
@@ -89,6 +89,69 @@ This record describes the guide's evidence and outstanding execution checks.
 | [`qdl`](https://github.com/linux-msm/qdl/tree/v2.8) | 2.8 | Linux host binary and flashing syntax |
 
 The [run 3 baseline](#verified-baseline) and the [October 10 reconciliation](#october-10-source-reconciliation) record the earlier revisions.
+
+## Run 4 Hardware Walkthrough on 2026-10-28
+
+This record summarizes the verification of [guide revision `72f7f018dc54938fb6241aa3f601cb608c21d60e`](https://github.com/foundriesio/standalone-docs/tree/72f7f018dc54938fb6241aa3f601cb608c21d60e/uno-q-setup-and-updates).
+The run took place from about 15:44 to 17:25 UTC on 2026-10-28.
+An agent with read-only file and web access, no machine access, and no lab knowledge read the guide and issued the commands.
+An operator ran each command verbatim on the named machine and returned its raw output.
+The protocol allowed two operator rescues beyond relaying commands and output; none were needed.
+Before the run, the board ran an earlier image with the edk2 UEFI boot chain, so the guide's flash replaced that partition layout with the stock one.
+
+### Verified Baseline
+
+| Item | Revision or configuration |
+| --- | --- |
+| Board and access | Arduino UNO Q, 4 GB (4096 MB), with Bughopper for serial access and EDL |
+| Boot firmware | Before flashing: the earlier image's UEFI `6.0.260722.BOOT.MXF.1.0.c1-00536-KODIAKLA-2`. After flashing: the guide image's `5.0.250619.BOOT.XF.4.1.2-00023-KAMORTALAZ-5` and U-Boot 2026.01-rc3 |
+| BSP and kernel | meta-qcom `b094cfc` (`qli-2.1.1`), meta-qcom-arduino `8457c3d`, meta-qcom-distro `f0c3c7b`; `linux-qcom` 6.18.44 at `8d0ad37`; M-05 overlay selected |
+| Build configuration | Guide kas configuration at `72f7f01`, including meta-foundries `ci/uno-q.yml` at `ee25a99`; all 14 resolved pins matched |
+| Image identity | Qualcomm Linux Reference Distro (OTA-enabled) 2.1; build IDs `unoq-wrynose-os-1` and `unoq-wrynose-os-2`; tag `wrynose`; OSTree OS name `nodistro` |
+| Client and packaging | aktualizr-lite 98 at `57e4f7f`, with `pacman.os` unset; host composectl v96.3.0 |
+| Server and CLI | update-server release v1.0-rc3 binaries; both checksums matched and both tools printed `v1.0-rc3` |
+| Build machine | Ubuntu 24.04 x86-64, kas-container 5.4 |
+| Local computer | Separate Ubuntu 24.04 x86-64 machine for the server, flashing, and console; qdl v2.8; the build machine pushed the transfers |
+
+### Checkpoint Results
+
+| Checkpoint | Result |
+| --- | --- |
+| 1. Prepare the build host | PASS: host checks on both machines, kas-container, and guide checkout |
+| 2. Build | PASS: RAM and firmware record, M-05 selection, all 14 pins, OS version 1 build (7,029 tasks), archive, and checksum-verified transfer |
+| 3. Flash and connect | PASS: Bughopper EDL, qdl flash with no errors, reset, first boot of the stock U-Boot chain, serial shell, Wi-Fi, clock, identity, and the M-05 device-tree check |
+| 4. Start the update server | PASS: release download with matching checksums, initialization, and serving |
+| 5. Register and select | PASS: registration and UI listing, active services, configuration, CLI login, and selection; consecutive CLI commands returned no HTTP 429 |
+| 6. Initial update | PASS: shellhttpd version 1 published, pulled over HTTPS, uploaded, rolled out, and responding on the existing OS without a reboot |
+| 7. OS version 2 and shellhttpd version 2 | PASS: OS version 2 build (7,029 tasks), rollout, reboot on the stock chain, successful finalization, OS version 2 identity, retained M-05 reservation, and application response |
+| 8. Add a second application | PASS: both applications responded; OS checksum and boot ID were unchanged |
+| 9. Application-only update | PASS: shellhttpd returned `X-App-Version: 3`, statushttpd remained available, and OS checksum and boot ID were unchanged |
+
+No boot showed a kernel warning or a synchronous external abort.
+The board kept its Wi-Fi IPv4 address across the OS update reboot.
+In checkpoint 8, the two-application update installed before the new selection reached the board; statushttpd started at the next configuration poll, within the five minutes the guide allows.
+
+### Coverage Limits and Follow-Up
+
+- The HTTPS container registry was provisioned before the run and required no login.
+  Registry setup and authenticated registry access were not tested.
+- Build-machine packages were already installed. On the local computer, the reader ran the host preparation and installed the missing Buildx plugin from the Ubuntu route.
+- Builds used shared download and shared-state caches, plus a local overlay limiting build parallelism.
+  OS version 1 reused 6,583 of 7,029 tasks from shared state; a build without caches was not tested.
+- The run used the Bughopper path and a 4 GB board with M-05.
+  The ADB path, the jumper path, and the 2 GB configuration were not exercised.
+- New shells were opened for both builds, the server, and a new login after the `dialout` change; the guide's instructions restored their variables.
+- The conditional ARM64 emulation step was not needed by the example Dockerfile.
+- An operator-side relay error lost one shell variable; the operator restored the host's state and repeated that step, and the reader saw only the repeated result.
+- **Firmware record.** The build page records the `UEFI Ver` line before the first flash, which describes the earlier image's firmware, not the boot firmware this guide installs.
+  Say that the M-05 choice is by RAM size, and record the firmware line at the guide image's first boot.
+- **Expected messages.** After the OS update reboot, before Wi-Fi and the clock came up, the client logged `curl error 7`, `SSL peer certificate` errors, and `Failed to post update events`.
+  The finalization event reached the server with a `1970-01-01` device time, and `docker ps` showed the restarted container as `Up 56 years`.
+  Add these to the expected messages, with run 3's version-parsing, `current-target`, and OSTree version-mismatch messages.
+- Explain how to tell which Docker route is installed, add a push form of the transfer and a SHA-256 check for the `composectl` download,
+  give the command that checks out the pull-request branch, and add a `docker buildx version` check on the local computer.
+
+These results apply to the recorded guide and component revisions.
 
 ## October 28 Move to Wrynose and the Stock Boot Chain
 
@@ -122,7 +185,7 @@ The booted system showed the `m05-boundary-guard@7b8ff000` node under `/proc/dev
 `MemTotal` was 3,808,120 kB, 17 MiB less than the unreserved stock image's 3,825,500 kB.
 A 1 GiB write to `/dev/shm` caused no synchronous external abort, and `systemctl is-system-running` reported `running`.
 The firmware path was the stock chain's: U-Boot 2026.01-rc3, and `EFI v2.11 by Das U-Boot`.
-The [flash page's check](flash.md#verify-the-selected-memory-workaround) is the reader's version of this test; the walkthrough still has to run it.
+The [flash page's check](flash.md#verify-the-selected-memory-workaround) is the reader's version of this test; [run 4](#run-4-hardware-walkthrough-on-2026-10-28) ran it on OS versions 1 and 2.
 
 ### October 28 Build and Image Checks
 
@@ -162,9 +225,12 @@ The update-server download block ran as written: both checksums matched, and bot
 
 ### Not Yet Verified for This Revision
 
-- Flashing this revision's image with the guide's own procedure; the October 28 check flashed it through a lab test harness, then checked its first boot and the booted M-05 reservation.
-- ADB with the `linux-qcom` kernel, Wi-Fi, and whether the Wi-Fi hardware address persists across reboots.
-- Registration, application updates, and the OS version 2 update with this image and the v1.0-rc3 binaries.
+[Run 4](#run-4-hardware-walkthrough-on-2026-10-28) flashed this revision's image with the guide's own procedure and completed registration, the application updates, and the OS version 2 update with the v1.0-rc3 binaries.
+These remain unverified:
+
+- ADB with the `linux-qcom` kernel, and the jumper EDL path.
+- Whether the Wi-Fi hardware address persists across reboots; the board kept its IPv4 address across the OS update reboot, but the address itself was not compared.
+- The 2 GB configuration, and a build without shared caches.
 
 ## Run 3 Hardware Walkthrough on 2026-10-13
 
@@ -451,28 +517,28 @@ The guide downloads and uploads app blobs; supplying only `--apps name=digest` w
 
 ## Execution Status
 
-The following table combines the historical checks, run 3 results, and the October 28 checks of this revision.
-Run 3 used guide revision `c71f6af` and update server `e30762e`; remaining gaps are explicit.
+The following table combines the historical checks, run 3 results, the October 28 checks of this revision, and run 4.
+Run 3 used guide revision `c71f6af` and update server `e30762e`; run 4 used guide revision `72f7f01` and update-server release v1.0-rc3. Remaining gaps are explicit.
 Hardware results before October 28 were obtained with the earlier development-branch layers, `linux-arduino` kernel, and edk2 UEFI boot chain.
 
 | Check | Required evidence | Status |
 | --- | --- | --- |
-| Build | Resolved configuration, build result, manifests, flash bundle, OS repository | This revision: OS version 1 with the M-05 overlay built October 28, 2026; OS version 2 resolved and parsed, not built. Earlier revision: OS version 1 and 2 built October 12, rebuilt October 13 with the ADB kernel modules, and built again by the October 13 walkthrough |
-| Boot of this revision's image | Flash, normal boot, `BUILD_ID`, console | Pending for this revision. Earlier revision: OS version 1 flashed and booted October 13; OS version 2 booted through the update |
-| Stock boot chain | Flash bundle contents, U-Boot boot, slot marking, OS update and rollback | Bundle contents checked October 28. A separate October 28 hardware test of the stock chain on a 4 GB board booted, updated, and rolled back; this revision's image not yet run |
-| M-05 on affected 4 GB board | Board/RAM and firmware identity, matching kernel recipe, successful patch/build, compiled and booted device-tree reservation at `0x7b8ff000` of size `0x1100000`, update/reboot logs | This revision: patch applies to `linux-qcom` 6.18.44, and the compiled, `boot.img`, and `dtb.bin` device trees carry the node (October 28); booted reservation pending. The October 28 stock-chain test without the reservation listed the window as System RAM. Earlier revision: booted reservation checked October 13 on OS versions 1 and 2 |
+| Build | Resolved configuration, build result, manifests, flash bundle, OS repository | This revision: OS version 1 with the M-05 overlay built October 28, 2026, and run 4 built OS versions 1 and 2 by following the guide the same day. Earlier revision: OS version 1 and 2 built October 12, rebuilt October 13 with the ADB kernel modules, and built again by the October 13 walkthrough |
+| Boot of this revision's image | Flash, normal boot, `BUILD_ID`, console | Run 4 (October 28): OS version 1 flashed and booted; OS version 2 booted through the update. Earlier revision: OS version 1 flashed and booted October 13; OS version 2 booted through the update |
+| Stock boot chain | Flash bundle contents, U-Boot boot, slot marking, OS update and rollback | Bundle contents checked October 28. A separate October 28 hardware test of the stock chain on a 4 GB board booted, updated, and rolled back. Run 4 flashed this revision's image, booted it, and updated it to OS version 2 with successful finalization; rollback was not exercised with this revision's image |
+| M-05 on affected 4 GB board | Board/RAM and firmware identity, matching kernel recipe, successful patch/build, compiled and booted device-tree reservation at `0x7b8ff000` of size `0x1100000`, update/reboot logs | This revision: patch applies to `linux-qcom` 6.18.44, and the compiled, `boot.img`, and `dtb.bin` device trees carry the node (October 28); the booted reservation was checked October 28 by a lab check and by run 4 on OS versions 1 and 2. The October 28 stock-chain test without the reservation listed the window as System RAM. Earlier revision: booted reservation checked October 13 on OS versions 1 and 2 |
 | M-05 removal | Released fixed firmware identity and passing reservation-free memory/update validation | Pending released firmware and validation |
-| Bughopper path | Record Bughopper revision and tool version; verify installation, permissions, serial discovery, EDL enumeration, successful `qdl` write, reset to normal boot, and working serial console | Completed October 11 and 13 with `pytactl` 2.0.0 and `qdl` 2.8; Bughopper revision not recorded |
+| Bughopper path | Record Bughopper revision and tool version; verify installation, permissions, serial discovery, EDL enumeration, successful `qdl` write, reset to normal boot, and working serial console | Completed October 11 and 13 with `pytactl` 2.0.0 and `qdl` 2.8, and October 28 in run 4 with the stock boot chain; Bughopper revision not recorded |
 | Jumper flashing path | EDL pin sequence, USB enumeration, successful `qdl` write, jumper removal, and normal boot | Not run |
 | ADB path | Device enumeration, root shell, Wi-Fi setup | Enumeration and root shell checked October 13 with a Bughopper-flashed board; Wi-Fi setup over ADB not run |
-| Linux host | Docker Engine, Compose, Buildx, and native USB access | Build host with Docker's packages completed October 11 and 13; local computer with Ubuntu's packages, including `docker-buildx`, completed October 13 |
-| Native server and tools | Linux binaries run, `composectl publish` is available, host registry authentication works, initialization succeeds, and restart preserves the data directory | This revision: the v1.0-rc3 downloads match the recorded checksums and both report `v1.0-rc3` (October 28); not yet run through the guide. With release v1.0-rc1 on October 13: initialization, `serve`, CLI login, `composectl` publish and pull. Registry authentication and restart not run (local registry). Run 3 also completed initialization, serving, CLI login, publication, and pull with the source build at `e30762e`; registry authentication and server restart remain untested |
-| Enrollment | Successful board command, device identifier, `unoq-lab` certificate OU, `wrynose` tag, Compose package-manager type, heartbeat over gateway | Completed October 11 and 13, except the certificate OU, which was not inspected |
-| App selection | fioconfig delivery and requested app list | Delivered to the board October 13: `shellhttpd`, then `shellhttpd,statushttpd` |
-| First rollout | shellhttpd version 1 response and server result | Completed October 13 with release v1.0-rc1 and repeated in run 3 with source build `e30762e` |
-| Second rollout | New OS build ID, changed boot ID/deployment, version 2 response, server success with `pacman.os` unset and the same memory-workaround selection | Completed October 13 with release v1.0-rc1 and repeated in run 3 with source build `e30762e` |
-| Add a second application | Both HTTP apps respond; original app digest, OS checksum/build ID, and boot ID retained | Completed October 13 with release v1.0-rc1. Run 3 with `e30762e` confirmed both app responses and unchanged OS checksum and boot ID |
-| Update only the existing app | New image's HTTP header and message; second app digest, OS checksum/build ID, and boot ID retained | Completed October 13 with release v1.0-rc1. Run 3 with `e30762e` confirmed the version 3 header, retained statushttpd, and unchanged OS checksum and boot ID |
+| Linux host | Docker Engine, Compose, Buildx, and native USB access | Build host with Docker's packages completed October 11 and 13; local computer with Ubuntu's packages, including `docker-buildx`, completed October 13. Run 4 repeated both on October 28; the reader installed `docker-buildx` on the local computer from the Ubuntu route |
+| Native server and tools | Linux binaries run, `composectl publish` is available, host registry authentication works, initialization succeeds, and restart preserves the data directory | This revision: the v1.0-rc3 downloads match the recorded checksums and both report `v1.0-rc3` (October 28); run 4 completed initialization, serving, CLI login, publication, and pull with them. With release v1.0-rc1 on October 13: initialization, `serve`, CLI login, `composectl` publish and pull. Registry authentication and restart not run (local registry). Run 3 also completed initialization, serving, CLI login, publication, and pull with the source build at `e30762e`; registry authentication and server restart remain untested |
+| Enrollment | Successful board command, device identifier, `unoq-lab` certificate OU, `wrynose` tag, Compose package-manager type, heartbeat over gateway | Completed October 11, 13, and 28, except the certificate OU, which was not inspected |
+| App selection | fioconfig delivery and requested app list | Delivered to the board October 13 and again in run 4 on October 28: `shellhttpd`, then `shellhttpd,statushttpd` |
+| First rollout | shellhttpd version 1 response and server result | Completed October 13 with release v1.0-rc1, repeated in run 3 with source build `e30762e`, and in run 4 with release v1.0-rc3 |
+| Second rollout | New OS build ID, changed boot ID/deployment, version 2 response, server success with `pacman.os` unset and the same memory-workaround selection | Completed October 13 with release v1.0-rc1, repeated in run 3 with source build `e30762e`, and in run 4 with release v1.0-rc3 on the stock boot chain |
+| Add a second application | Both HTTP apps respond; original app digest, OS checksum/build ID, and boot ID retained | Completed October 13 with release v1.0-rc1. Run 3 with `e30762e` and run 4 with v1.0-rc3 confirmed both app responses and unchanged OS checksum and boot ID |
+| Update only the existing app | New image's HTTP header and message; second app digest, OS checksum/build ID, and boot ID retained | Completed October 13 with release v1.0-rc1. Run 3 with `e30762e` and run 4 with v1.0-rc3 confirmed the version 3 header, retained statushttpd, and unchanged OS checksum and boot ID |
 
 The host resource allowance is a planning estimate, not a measured minimum.
 
